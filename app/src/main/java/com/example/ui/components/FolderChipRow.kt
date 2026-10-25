@@ -22,7 +22,6 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -34,19 +33,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import com.example.data.model.Folder
+import com.example.data.model.FirestoreFolder
 import com.example.ui.viewmodel.FolderFilter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FolderChipRow(
-    folders: List<Folder>,
+    folders: List<FirestoreFolder>,
     currentFilter: FolderFilter,
     totalVideosCount: Int,
     favoritesCount: Int,
     onSelectFilter: (FolderFilter) -> Unit,
     onNewFolderClick: () -> Unit,
-    onEditFolderClick: (Folder) -> Unit,
+    onEditFolderClick: (FirestoreFolder) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()

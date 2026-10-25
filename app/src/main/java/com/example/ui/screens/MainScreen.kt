@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import android.content.Context
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,11 +21,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.outlined.VideoLibrary
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -32,6 +36,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -60,9 +65,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.credentials.CredentialManager
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.data.model.Folder
-import com.example.data.model.VideoBookmark
+import com.example.data.model.FirestoreFolder
+import com.example.data.model.FirestoreVideoBookmark
 import com.example.ui.components.AddEditVideoDialog
 import com.example.ui.components.FolderChipRow
 import com.example.ui.components.FolderDialog
@@ -80,8 +86,10 @@ fun MainScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val credentialManager = remember { CredentialManager.create(context) }
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
     val folders by viewModel.folders.collectAsStateWithLifecycle()
     val bookmarks by viewModel.bookmarks.collectAsStateWithLifecycle()
     val currentFilter by viewModel.filter.collectAsStateWithLifecycle()
@@ -97,13 +105,12 @@ fun MainScreen(
     val editingFolder by viewModel.editingFolder.collectAsStateWithLifecycle()
 
     var showSortMenu by remember { mutableStateOf(false) }
+    var showUserMenu by remember { mutableStateOf(false) }
     var isSearchExpanded by remember { mutableStateOf(false) }
 
-    // Confirm delete bookmark dialog state
-    var bookmarkToDelete by remember { mutableStateOf<VideoBookmark?>(null) }
-    var folderToDelete by remember { mutableStateOf<Folder?>(null) }
+    var bookmarkToDelete by remember { mutableStateOf<FirestoreVideoBookmark?>(null) }
+    var folderToDelete by remember { mutableStateOf<FirestoreFolder?>(null) }
 
-    // Show snackbar on message
     LaunchedEffect(userMessage) {
         userMessage?.let { msg ->
             snackbarHostState.showSnackbar(msg)
@@ -145,16 +152,27 @@ fun MainScreen(
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold
                                 )
-                                Text(
-                                    text = "مقاطع يوتيوب مع توقيت مخصص",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CloudDone,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Text(
+                                        text = "مزامنة سحابية نشطة",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
                     },
                     actions = {
-                        // Search icon button
+                        // Search button
                         IconButton(
                             onClick = { isSearchExpanded = !isSearchExpanded },
                             modifier = Modifier.testTag("search_toggle_button")
@@ -171,7 +189,10 @@ fun MainScreen(
                                 onClick = { showSortMenu = true },
                                 modifier = Modifier.testTag("sort_menu_button")
                             ) {
-                                Icon(imageVector = Icons.AutoMirrored.Filled.Sort, contentDescription = "ترتيب")
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.Sort,
+                                    contentDescription = "ترتيب"
+                                )
                             }
 
                             DropdownMenu(
@@ -208,13 +229,63 @@ fun MainScreen(
                                 )
                             }
                         }
+
+                        // User profile / Account menu button
+                        Box {
+                            IconButton(
+                                onClick = { showUserMenu = true },
+                                modifier = Modifier.testTag("user_profile_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AccountCircle,
+                                    contentDescription = "الحساب",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+
+                            DropdownMenu(
+                                expanded = showUserMenu,
+                                onDismissRequest = { showUserMenu = false }
+                            ) {
+                                currentUser?.let { user ->
+                                    Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)) {
+                                        Text(
+                                            text = user.displayName ?: "مستخدم Tubemark",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = user.email ?: "",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    HorizontalDivider()
+                                }
+
+                                DropdownMenuItem(
+                                    text = { Text("تسجيل الخروج", color = MaterialTheme.colorScheme.error) },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                    },
+                                    onClick = {
+                                        showUserMenu = false
+                                        viewModel.signOut(context, credentialManager)
+                                    },
+                                    modifier = Modifier.testTag("sign_out_menu_item")
+                                )
+                            }
+                        }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.surface
                     )
                 )
 
-                // Search field (when expanded)
                 if (isSearchExpanded) {
                     Box(
                         modifier = Modifier
@@ -248,7 +319,6 @@ fun MainScreen(
                     }
                 }
 
-                // Folder horizontal chips
                 FolderChipRow(
                     folders = folders,
                     currentFilter = currentFilter,
@@ -278,14 +348,12 @@ fun MainScreen(
                 .padding(innerPadding)
         ) {
             if (bookmarks.isEmpty()) {
-                // Empty state
                 EmptyStateView(
                     isSearch = searchQuery.isNotBlank(),
                     onAddClick = { viewModel.openAddDialog() },
                     onClearSearch = { viewModel.setSearchQuery("") }
                 )
             } else {
-                // Video bookmarks list
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 88.dp),
@@ -306,7 +374,7 @@ fun MainScreen(
                                 bookmark = bookmark,
                                 folder = folder,
                                 onOpenInYouTube = {
-                                    YouTubeUtil.openVideoInYouTube(context, it.videoId, it.startSeconds)
+                                    YouTubeUtil.openVideoInYouTube(context, it.youtubeVideoId, it.startSeconds)
                                 },
                                 onToggleFavorite = { viewModel.toggleFavorite(it) },
                                 onEdit = { viewModel.openEditDialog(it) },
@@ -319,7 +387,6 @@ fun MainScreen(
         }
     }
 
-    // Add / Edit Video Dialog
     if (showAddEditDialog) {
         AddEditVideoDialog(
             viewModel = viewModel,
@@ -333,7 +400,6 @@ fun MainScreen(
         )
     }
 
-    // Create / Edit Folder Dialog
     if (showFolderDialog) {
         FolderDialog(
             existingFolder = editingFolder,
@@ -348,12 +414,11 @@ fun MainScreen(
         )
     }
 
-    // Delete Bookmark Confirmation Dialog
     bookmarkToDelete?.let { bookmark ->
         AlertDialog(
             onDismissRequest = { bookmarkToDelete = null },
             title = { Text("حذف الفيديو؟") },
-            text = { Text("هل أنت متأكد من حذف \"${bookmark.title}\" من قائمتك؟") },
+            text = { Text("هل أنت متأكد من حذف \"${bookmark.title}\" من سحابتك وقائمتك؟") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -375,12 +440,11 @@ fun MainScreen(
         )
     }
 
-    // Delete Folder Confirmation Dialog
     folderToDelete?.let { folder ->
         AlertDialog(
             onDismissRequest = { folderToDelete = null },
             title = { Text("حذف المجلد؟") },
-            text = { Text("هل تريد حذف المجلد \"${folder.name}\"؟ لن يتم حذف الفيديوهات بداخله، بل ستصبح في تصنيف \"بدون مجلد\".") },
+            text = { Text("هل تريد حذف المجلد \"${folder.name}\" من السحابة؟ ستبقى مقاطعك محفوظة في تصنيف \"بدون مجلد\".") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -446,7 +510,7 @@ private fun EmptyStateView(
             text = if (isSearch) {
                 "جرّب البحث بكلمة أخرى أو مسح البحث."
             } else {
-                "احفظ أي فيديو من يوتيوب مع تحديد التوقيت المفضل بدقة لفتحه مباشرة بضغطة زر واحدة وتنظيمه في مجلداتك!"
+                "احفظ أي فيديو من يوتيوب مع تحديد التوقيت المفضل بدقة، وستتم مزامنته تلقائياً بين جميع أجهزتك!"
             },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,

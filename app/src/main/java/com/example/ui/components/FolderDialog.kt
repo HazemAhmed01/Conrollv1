@@ -41,16 +41,16 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.example.data.model.Folder
+import com.example.data.model.FirestoreFolder
 import com.example.ui.theme.FolderColors
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun FolderDialog(
-    existingFolder: Folder?,
+    existingFolder: FirestoreFolder?,
     onDismiss: () -> Unit,
     onSave: (name: String, colorHex: String, iconName: String) -> Unit,
-    onDelete: ((Folder) -> Unit)? = null
+    onDelete: ((FirestoreFolder) -> Unit)? = null
 ) {
     var name by remember { mutableStateOf(existingFolder?.name ?: "") }
     var selectedColor by remember {

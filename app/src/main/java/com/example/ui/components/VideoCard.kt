@@ -60,19 +60,19 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.example.data.model.Folder
-import com.example.data.model.VideoBookmark
+import com.example.data.model.FirestoreFolder
+import com.example.data.model.FirestoreVideoBookmark
 import com.example.ui.theme.YouTubeRed
 import com.example.util.YouTubeUtil
 
 @Composable
 fun VideoCard(
-    bookmark: VideoBookmark,
-    folder: Folder?,
-    onOpenInYouTube: (VideoBookmark) -> Unit,
-    onToggleFavorite: (VideoBookmark) -> Unit,
-    onEdit: (VideoBookmark) -> Unit,
-    onDelete: (VideoBookmark) -> Unit,
+    bookmark: FirestoreVideoBookmark,
+    folder: FirestoreFolder?,
+    onOpenInYouTube: (FirestoreVideoBookmark) -> Unit,
+    onToggleFavorite: (FirestoreVideoBookmark) -> Unit,
+    onEdit: (FirestoreVideoBookmark) -> Unit,
+    onDelete: (FirestoreVideoBookmark) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -251,7 +251,7 @@ fun VideoCard(
                                 onClick = {
                                     showMenu = false
                                     val timeParam = if (bookmark.startSeconds > 0) "&t=${bookmark.startSeconds}s" else ""
-                                    val fullUrl = "https://www.youtube.com/watch?v=${bookmark.videoId}$timeParam"
+                                    val fullUrl = "https://www.youtube.com/watch?v=${bookmark.youtubeVideoId}$timeParam"
                                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                     clipboard.setPrimaryClip(ClipData.newPlainText("YouTube Link", fullUrl))
                                 },
@@ -264,7 +264,7 @@ fun VideoCard(
                                 onClick = {
                                     showMenu = false
                                     val timeParam = if (bookmark.startSeconds > 0) "&t=${bookmark.startSeconds}s" else ""
-                                    val fullUrl = "https://www.youtube.com/watch?v=${bookmark.videoId}$timeParam"
+                                    val fullUrl = "https://www.youtube.com/watch?v=${bookmark.youtubeVideoId}$timeParam"
                                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                                         type = "text/plain"
                                         putExtra(Intent.EXTRA_TEXT, "${bookmark.title}\n$fullUrl")

@@ -1,0 +1,97 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidFolder(data) {
+      return data.userId == request.auth.uid &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+             data.colorHex is string && data.colorHex.size() <= 20 &&
+             (!('iconName' in data) || (data.iconName is string && data.iconName.size() <= 50));
+    }
+
+    function isValidVideo(data) {
+      return data.userId == request.auth.uid &&
+             data.youtubeVideoId is string && data.youtubeVideoId.size() >= 1 && data.youtubeVideoId.size() <= 32 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 500 &&
+             data.startSeconds is int && data.startSeconds >= 0 &&
+             (!('originalUrl' in data) || (data.originalUrl is string && data.originalUrl.size() <= 2000)) &&
+             (!('channelName' in data) || (data.channelName is string && data.channelName.size() <= 200)) &&
+             (!('thumbnailUrl' in data) || (data.thumbnailUrl is string && data.thumbnailUrl.size() <= 2000)) &&
+             (!('folderId' in data) || data.folderId == null || (data.folderId is string && data.folderId.size() <= 128)) &&
+             (!('note' in data) || (data.note is string && data.note.size() <= 2000)) &&
+             (!('isFavorite' in data) || data.isFavorite is bool);
+    }
+
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+
+      match /folders/{folderId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         isValidId(folderId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'name', 'colorHex', 'createdAt']) &&
+                         incoming().keys().hasOnly(['userId', 'name', 'colorHex', 'iconName', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidFolder(incoming());
+
+        allow update: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidFolder(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'colorHex', 'iconName', 'updatedAt']);
+
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
+
+      match /videos/{videoId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         isValidId(videoId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'youtubeVideoId', 'title', 'startSeconds', 'createdAt']) &&
+                         incoming().keys().hasOnly(['userId', 'youtubeVideoId', 'originalUrl', 'title', 'channelName', 'thumbnailUrl', 'startSeconds', 'folderId', 'note', 'isFavorite', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidVideo(incoming());
+
+        allow update: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidVideo(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['youtubeVideoId', 'originalUrl', 'title', 'channelName', 'thumbnailUrl', 'startSeconds', 'folderId', 'note', 'isFavorite', 'updatedAt']);
+
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
+    }
+  }
+}

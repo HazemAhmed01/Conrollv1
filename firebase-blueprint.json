@@ -1,0 +1,48 @@
+{
+  "entities": {
+    "Folder": {
+      "title": "Folder",
+      "description": "User collection/folder for organizing video bookmarks",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner user ID" },
+        "name": { "type": "string", "description": "Folder display name" },
+        "colorHex": { "type": "string", "description": "Hex color code for badge e.g. #E53935" },
+        "iconName": { "type": "string", "description": "Icon identifier" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp via serverTimestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Update timestamp via serverTimestamp" }
+      },
+      "required": ["userId", "name", "colorHex", "createdAt"]
+    },
+    "VideoBookmark": {
+      "title": "VideoBookmark",
+      "description": "Saved YouTube video with custom timestamp and folder assignment",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner user ID" },
+        "youtubeVideoId": { "type": "string", "description": "11-character YouTube video ID" },
+        "originalUrl": { "type": "string", "description": "Full YouTube URL" },
+        "title": { "type": "string", "description": "Video title" },
+        "channelName": { "type": "string", "description": "Channel name if available" },
+        "thumbnailUrl": { "type": "string", "description": "Thumbnail image URL" },
+        "startSeconds": { "type": "integer", "description": "Start timestamp in seconds" },
+        "folderId": { "type": "string", "description": "Optional assigned folder ID" },
+        "note": { "type": "string", "description": "User notes" },
+        "isFavorite": { "type": "boolean", "description": "Whether bookmarked as favorite" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp via serverTimestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Update timestamp via serverTimestamp" }
+      },
+      "required": ["userId", "youtubeVideoId", "title", "startSeconds", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/folders/{folderId}": {
+      "schema": "Folder",
+      "description": "Folders belonging to a specific user"
+    },
+    "/users/{userId}/videos/{videoId}": {
+      "schema": "VideoBookmark",
+      "description": "Video bookmarks belonging to a specific user"
+    }
+  }
+}

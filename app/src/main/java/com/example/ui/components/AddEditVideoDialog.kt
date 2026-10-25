@@ -2,7 +2,6 @@ package com.example.ui.components
 
 import android.content.ClipboardManager
 import android.content.Context
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -64,10 +63,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.example.data.model.Folder
-import com.example.data.model.VideoBookmark
+import com.example.data.model.FirestoreFolder
+import com.example.data.model.FirestoreVideoBookmark
 import com.example.ui.viewmodel.BookmarkViewModel
 import com.example.util.YouTubeUtil
 
@@ -75,9 +75,9 @@ import com.example.util.YouTubeUtil
 @Composable
 fun AddEditVideoDialog(
     viewModel: BookmarkViewModel,
-    existingBookmark: VideoBookmark?,
+    existingBookmark: FirestoreVideoBookmark?,
     prefillUrl: String?,
-    folders: List<Folder>,
+    folders: List<FirestoreFolder>,
     onDismiss: () -> Unit,
     onSave: (
         videoId: String,
@@ -86,7 +86,7 @@ fun AddEditVideoDialog(
         channelName: String,
         thumbnailUrl: String,
         startSeconds: Int,
-        folderId: Long?,
+        folderId: String?,
         note: String
     ) -> Unit
 ) {
@@ -96,7 +96,7 @@ fun AddEditVideoDialog(
         mutableStateOf(existingBookmark?.originalUrl ?: prefillUrl ?: "")
     }
     var videoId by remember {
-        mutableStateOf(existingBookmark?.videoId ?: "")
+        mutableStateOf(existingBookmark?.youtubeVideoId ?: "")
     }
     var titleInput by remember {
         mutableStateOf(existingBookmark?.title ?: "")
@@ -166,7 +166,6 @@ fun AddEditVideoDialog(
         }
     }
 
-    // React to fetched metadata
     val fetchedMeta by viewModel.fetchedMetadata.collectAsStateWithLifecycle(null)
     val isFetching by viewModel.isFetchingMetadata.collectAsStateWithLifecycle(false)
 
@@ -266,7 +265,7 @@ fun AddEditVideoDialog(
                     Card(
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth(),
-                        colors = androidx.compose.material3.CardDefaults.cardColors(
+                        colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                         )
                     ) {
@@ -386,7 +385,6 @@ fun AddEditVideoDialog(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Hours
                             TimeNumberInput(
                                 label = "ساعة",
                                 value = hoursText,
@@ -404,7 +402,6 @@ fun AddEditVideoDialog(
                                 modifier = Modifier.padding(horizontal = 8.dp)
                             )
 
-                            // Minutes
                             TimeNumberInput(
                                 label = "دقيقة",
                                 value = minutesText,
@@ -422,7 +419,6 @@ fun AddEditVideoDialog(
                                 modifier = Modifier.padding(horizontal = 8.dp)
                             )
 
-                            // Seconds
                             TimeNumberInput(
                                 label = "ثانية",
                                 value = secondsText,
@@ -436,7 +432,6 @@ fun AddEditVideoDialog(
 
                         Spacer(modifier = Modifier.height(10.dp))
 
-                        // Stepper Quick Buttons
                         FlowRow(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -468,7 +463,6 @@ fun AddEditVideoDialog(
                             }
                         }
 
-                        // Test playback right now button
                         if (videoId.isNotBlank()) {
                             Spacer(modifier = Modifier.height(10.dp))
                             OutlinedButton(
@@ -505,7 +499,6 @@ fun AddEditVideoDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // None / Uncategorized Chip
                     val isNoneSelected = selectedFolderId == null
                     Surface(
                         shape = RoundedCornerShape(10.dp),
@@ -528,7 +521,6 @@ fun AddEditVideoDialog(
                         }
                     }
 
-                    // Existing folders
                     folders.forEach { folder ->
                         val isSelected = selectedFolderId == folder.id
                         val color = try {
@@ -622,7 +614,7 @@ fun AddEditVideoDialog(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            text = if (existingBookmark != null) "تحديث الفيديو" else "حفظ الفيديو",
+                            text = if (existingBookmark != null) "تحديث الفيديو" else "حفظ ومزامنة",
                             fontWeight = FontWeight.Bold
                         )
                     }

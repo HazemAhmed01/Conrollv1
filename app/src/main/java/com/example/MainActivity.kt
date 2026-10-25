@@ -10,9 +10,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.credentials.CredentialManager
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
+import com.example.ui.auth.AuthManager
+import com.example.ui.screens.AuthScreen
 import com.example.ui.screens.MainScreen
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.viewmodel.BookmarkViewModel
@@ -24,14 +31,31 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // Attempt silent auto sign-in if previous session exists
+        val credentialManager = CredentialManager.create(this)
+        AuthManager.attemptAutoSignIn(
+            context = this,
+            credentialManager = credentialManager,
+            onAuthSuccess = { viewModel.onAuthSuccess() },
+            onUnauthenticated = { /* show auth screen */ },
+            scope = lifecycleScope
+        )
+
         handleIncomingShareIntent(intent)
 
         setContent {
             MyApplicationTheme {
-                // Support authentic right-to-left (RTL) Arabic layout
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                     Surface(modifier = Modifier.fillMaxSize()) {
-                        MainScreen(viewModel = viewModel)
+                        val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
+
+                        if (currentUser == null) {
+                            AuthScreen(
+                                onAuthSuccess = { viewModel.onAuthSuccess() }
+                            )
+                        } else {
+                            MainScreen(viewModel = viewModel)
+                        }
                     }
                 }
             }
