@@ -1,0 +1,6 @@
+{
+  "name": "Tubemark",
+  "description": "حفظ مقاطع يوتيوب مع توقيت مخصص وتنظيمها داخل مجلدات وفتحها مباشرة في تطبيق يوتيوب",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

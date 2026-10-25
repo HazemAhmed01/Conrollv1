@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Tubemark</string>
+    <string name="app_subtitle">إشارات ومقاطع يوتيوب الذكية</string>
+    <string name="all_videos">جميع المقاطع</string>
+    <string name="all_folders">المجلدات</string>
+    <string name="new_folder">مجلد جديد</string>
+    <string name="add_video">إضافة فيديو</string>
+    <string name="search_placeholder">بحث في المقاطع والمجلدات...</string>
+    <string name="paste_url">الصق رابط يوتيوب</string>
+    <string name="start_time_label">وقت البدء (اختياري)</string>
+    <string name="video_title">عنوان الفيديو</string>
+    <string name="open_in_youtube">فتح في يوتيوب</string>
+    <string name="save">حفظ</string>
+    <string name="cancel">إلغاء</string>
+    <string name="delete">حذف</string>
+    <string name="edit">تعديل</string>
+</resources>
